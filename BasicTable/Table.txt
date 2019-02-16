@@ -1,0 +1,181 @@
+/* RX_WU0083, Michael Nitschke 24/10/2018 */
+
+/* 
+>>> Important: The scrollable columns use fontawesome for the scrollable icons.
+    Ensure the subpage 'RX_FONTAWESOME' is included on you page.
+*/
+
+import RX_UTILS_PKG:Table:BasicTable:SortData;
+import RX_UTILS_PKG:Table:BasicTable:ExportToExcelButton;
+
+class Table
+   property array of string Header;
+   property array of array of string Data;
+   property array of number SortableColumns;
+   property string ExtraSortParameters;
+   property RX_UTILS_PKG:Table:BasicTable:ExportToExcelButton ExportToExcelButton;
+   property string ExportFileName;
+   method Table();
+   method GetHTML() Returns string;
+protected
+   property string HTML;
+   property string tableID;
+   method SortData();
+   method IncludeExportButtons();
+   method TableStart();
+   method HeaderRow();
+   method HeaderColumns();
+   method TableHeader(&column As integer); /* &column required for subclasses */
+   method AddSortLink(&column As integer);
+   method GetSortLinkHREF(&column As integer) Returns string;
+   method UseColumnNumIfNoSortColumn(&column As integer) Returns string;
+   method ReverseSortOrderIfColumnClickedTwice() Returns string;
+   method DataRows();
+   method DataColumns(&Row As array of string, &class As string);
+   method TableData(&Row As array of string, &column As integer, &class As string); /* &column required for subclasses */
+   method TableEnd();
+end-class;
+
+method Table
+   %This.Header = CreateArrayRept("", 0);
+   %This.Data = CreateArrayRept(CreateArrayRept("", 0), 0);
+   %This.SortableColumns = CreateArrayRept(0, 0);
+   %This.ExportToExcelButton = create RX_UTILS_PKG:Table:BasicTable:ExportToExcelButton();
+   &tableID = "BasicTable";
+end-method;
+
+method GetHTML
+   /+ Returns String +/
+   %This.SortData();
+   %This.IncludeExportButtons();
+   %This.TableStart();
+   %This.HeaderRow();
+   %This.DataRows();
+   %This.TableEnd();
+   Return &HTML;
+end-method;
+
+method SortData
+   If %Request.GetParameter("SORT_COLUMN") = "" Then
+      Return;
+   End-If;
+   Local integer &previousSortColumn = Value(%Request.GetParameter("PREVIOUS_SORT_COLUMN"));
+   Local integer &sortColumn = Value(%Request.GetParameter("SORT_COLUMN"));
+   Local string &sortOrder = %Request.GetParameter("SORT_ORDER");
+   Local any &SortData = create RX_UTILS_PKG:Table:BasicTable:SortData();
+   %This.Data = &SortData.Sort(%This.Data, &sortColumn, &sortOrder);
+end-method;
+
+method IncludeExportButtons
+   If %This.ExportToExcelButton.Visible Then
+      &HTML = &HTML | %This.ExportToExcelButton.Get(&tableID, &ExportFileName);
+   End-If;
+   If %This.ExportToExcelButton.Visible Then
+      rem &HTML = &HTML | "<br><br>";
+   End-If;
+end-method;
+
+method TableStart
+   &HTML = &HTML | "<table id=""" | &tableID | """ class=""PSLEVEL1GRID"" border=""0"" cellpadding=""3"" cellspacing=""0"" width=""100%"">" | Char(13);
+end-method;
+
+method HeaderRow
+   &HTML = &HTML | " <tr valign=""top"">" | Char(13);
+   %This.HeaderColumns();
+   &HTML = &HTML | " </tr>" | Char(13);
+end-method;
+
+method HeaderColumns
+   Local integer &column;
+   For &column = 1 To %This.Header.Len
+      %This.AddSortLink(&column);
+      %This.TableHeader(&column);
+   End-For;
+end-method;
+
+method TableHeader
+   /+ &column as Integer +/
+   Local string &tableHeader;
+   &tableHeader = %This.Header [&column];
+   &HTML = &HTML | "   <th nowrap scope=""col"" class=""PSLEVEL1GRIDCOLUMNHDR"" align=""left"">" | &tableHeader | "</th>" | Char(13);
+end-method;
+
+method AddSortLink
+   /+ &column as Integer +/
+   If %This.SortableColumns.Find(&column) = 0 Then
+      Return;
+   End-If;
+   Local string &anchorStart, &anchorEnd, &href;
+   &anchorStart = "<div style=""text-align: center; width: 100%""><a class=""PSLEVEL1GRIDCOLUMNHDR"" href=""";
+   &href = %This.GetSortLinkHREF(&column);
+   &anchorEnd = "</a><br><span class=""fas fa-sort""></span></div>";
+   %This.Header [&column] = &anchorStart | &href | %This.Header [&column] | &anchorEnd;
+end-method;
+
+method GetSortLinkHREF
+   /+ &column as Integer +/
+   /+ Returns String +/
+   Local string &href;
+   &href = &href | GenerateComponentContentURL(%Portal, %Node, (@("MenuName." | %Menu)), %Market, (@("Component." | %Component)), %Page, %Mode);
+   &href = &href | "&PREVIOUS_SORT_COLUMN=" | %This.UseColumnNumIfNoSortColumn(&column);
+   &href = &href | "&SORT_COLUMN=" | &column;
+   &href = &href | "&SORT_ORDER=" | %This.ReverseSortOrderIfColumnClickedTwice();
+   &href = &href | %This.ExtraSortParameters;
+   &href = &href | """>";
+   Return &href;
+end-method;
+
+method UseColumnNumIfNoSortColumn
+   /+ &column as Integer +/
+   /+ Returns String +/
+   If %Request.GetParameter("SORT_COLUMN") = "" Then
+      Return String(&column);
+   End-If;
+   Return %Request.GetParameter("SORT_COLUMN");
+end-method;
+
+method ReverseSortOrderIfColumnClickedTwice
+   /+ Returns String +/
+   If %Request.GetParameter("PREVIOUS_SORT_COLUMN") = %Request.GetParameter("SORT_COLUMN") And
+         %Request.GetParameter("SORT_ORDER") = "D" Then
+      Return "A";
+   End-If;
+   Return "D";
+end-method;
+
+method DataRows
+   Local integer &row;
+   Local string &class = "PSLEVEL1GRIDODDROW";
+   For &row = 1 To %This.Data.Len
+      &HTML = &HTML | "  <tr>" | Char(13);
+      %This.DataColumns(&Data [&row], &class);
+      &HTML = &HTML | "  </tr>" | Char(13);
+      If &class = "PSLEVEL1GRIDODDROW" Then
+         &class = "PSLEVEL1GRIDEVENROW";
+      Else
+         &class = "PSLEVEL1GRIDODDROW";
+      End-If;
+   End-For;
+end-method;
+
+method DataColumns
+   /+ &Row as Array of String, +/
+   /+ &class as String +/
+   Local integer &column;
+   For &column = 1 To &Row.Len
+      %This.TableData(&Row, &column, &class);
+   End-For;
+end-method;
+
+method TableData
+   /+ &Row as Array of String, +/
+   /+ &column as Integer, +/
+   /+ &class as String +/
+   Local string &tableData = &Row [&column];
+   &HTML = &HTML | "    <td nowrap class=""" | &class | """ align=""left"">" | &tableData | "</td>" | Char(13);
+end-method;
+
+method TableEnd
+   &HTML = &HTML | "</table>" | Char(13);
+end-method;
+

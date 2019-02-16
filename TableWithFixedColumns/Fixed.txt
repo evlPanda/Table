@@ -1,0 +1,28 @@
+import RX_UTILS_PKG:Table:BasicTable:Table;
+
+class Fixed extends RX_UTILS_PKG:Table:BasicTable:Table;
+   method Fixed();
+   method GetHTML() Returns string;
+protected
+   method TableStart();
+end-class;
+
+method Fixed
+   %Super = create RX_UTILS_PKG:Table:BasicTable:Table();
+end-method;
+
+method GetHTML
+   /+ Returns String +/
+   /+ Extends/implements RX_UTILS_PKG:Table:BasicTable:Table.GetHTML +/
+   /* >> Does not %Super.SortData() */
+   %This.TableStart();
+   %Super.HeaderRow();
+   %Super.DataRows();
+   %Super.TableEnd();
+   Return %Super.HTML;
+end-method;
+
+method TableStart
+   %Super.HTML = %Super.HTML | "<table id=""fixedTable"" class=""PSLEVEL1GRID fixedTable"" border=""0"" cellpadding=""3"" cellspacing=""0"">" | Char(13);
+end-method;
+

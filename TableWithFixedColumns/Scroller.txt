@@ -1,0 +1,60 @@
+import RX_UTILS_PKG:Table:BasicTable:Table;
+
+class Scroller extends RX_UTILS_PKG:Table:BasicTable:Table;
+   property number numberOfFixedColumns;
+   property boolean fixedTableHasSortableColumn;
+   method Scroller();
+   method GetHTML() Returns string;
+protected
+   method TableStart();
+   method AddSortLink(&column As integer);
+private
+   method AddPlaceholderIfRequired(&column As integer);
+   method FixedTableHasSortAndScrollableDoesNot() Returns boolean;
+end-class;
+
+method Scroller
+   %Super = create RX_UTILS_PKG:Table:BasicTable:Table();
+end-method;
+
+method GetHTML
+   /+ Returns String +/
+   /+ Extends/implements RX_UTILS_PKG:Table:BasicTable:Table.GetHTML +/
+   /* >> Does not %Super.SortData() */
+   %This.TableStart();
+   %Super.HeaderRow();
+   %Super.DataRows();
+   %Super.TableEnd();
+   Return %Super.HTML;
+end-method;
+
+method TableStart
+   %Super.HTML = %Super.HTML | "<table id=""scrollableTable"" class=""PSLEVEL1GRID scrollableTable"" border=""0"" cellpadding=""3"" cellspacing=""0"">" | Char(13);
+end-method;
+
+method AddSortLink
+   /+ &column as Integer +/
+   %This.AddPlaceholderIfRequired(&column);
+   If %This.SortableColumns.Find(&column) = 0 Then
+      Return;
+   End-If;
+   Local string &anchorStart, &anchorEnd, &href;
+   &anchorStart = "<div style=""text-align: center; width: 100%""><a class=""PSLEVEL1GRIDCOLUMNHDR"" href=""";
+   &href = %This.GetSortLinkHREF(&column + &numberOfFixedColumns);
+   &anchorEnd = "</a><br><span class=""fas fa-sort""></span></div>";
+   %This.Header [&column] = &anchorStart | &href | %This.Header [&column] | &anchorEnd;
+end-method;
+
+method AddPlaceholderIfRequired
+   /+ &column as Integer +/
+   If %This.FixedTableHasSortAndScrollableDoesNot() Then
+      %This.Header [&column] = %This.Header [&column] | "<br><br>";
+   End-If;
+end-method;
+
+method FixedTableHasSortAndScrollableDoesNot
+   /+ Returns Boolean +/
+   Return (&fixedTableHasSortableColumn And
+      %This.SortableColumns.Len = 0);
+end-method;
+

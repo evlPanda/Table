@@ -1,0 +1,126 @@
+import RX_UTILS_PKG:Table:BasicTable:Table;
+import RX_UTILS_PKG:Table:TableWithFixedColumns:Fixed;
+import RX_UTILS_PKG:Table:TableWithFixedColumns:Scroller;
+
+class Table extends RX_UTILS_PKG:Table:BasicTable:Table
+   property number numberOfFixedColumns;
+   property string width;
+   method Table();
+   method GetHTML() Returns string;
+private
+   instance RX_UTILS_PKG:Table:TableWithFixedColumns:Fixed &FixedTable;
+   instance RX_UTILS_PKG:Table:TableWithFixedColumns:Scroller &ScrollableTable;
+   method SetDefaults();
+   method CreateFixedTable();
+   method CreateScrollableTable();
+   method SplitHeader();
+   method SplitHeaderColumnIntoFixedOrScrollable(&col As integer);
+   method SplitData();
+   method AddDataRow();
+   method SplitDataRow(&row As integer);
+   method SplitDataIntoFixedOrScrollable(&row As integer, &col As integer);
+   method SplitSortableColumns();
+   method SplitSortableColumnIntoFixedOrScrollable(&col As integer);
+end-class;
+
+method Table
+   /+ Extends/implements RX_UTILS_PKG:Table:BasicTable:Table.Table +/
+   %Super = create RX_UTILS_PKG:Table:BasicTable:Table();
+   %Super.tableID = "fixedColumnTable";
+end-method;
+
+method GetHTML
+   /+ Returns String +/
+   /+ Extends/implements RX_UTILS_PKG:Table:BasicTable:Table.GetHTML +/
+   %Super.SortData();
+   %Super.IncludeExportButtons();
+   %This.SetDefaults();
+   %This.CreateFixedTable();
+   %This.CreateScrollableTable();
+   %This.SplitHeader();
+   %This.SplitData();
+   %This.SplitSortableColumns();
+   Return %Super.HTML | GetHTMLText(HTML.RX_TABLE_WITH_FIXED_COLUMNS, String(&width), &FixedTable.GetHTML(), &ScrollableTable.GetHTML());
+end-method;
+
+method SetDefaults
+   &width = "calc(100vw - 250px)";
+end-method;
+
+method CreateFixedTable
+   &FixedTable = create RX_UTILS_PKG:Table:TableWithFixedColumns:Fixed();
+   &FixedTable.ExtraSortParameters = %This.ExtraSortParameters;
+end-method;
+
+method CreateScrollableTable
+   &ScrollableTable = create RX_UTILS_PKG:Table:TableWithFixedColumns:Scroller();
+   &ScrollableTable.numberOfFixedColumns = %This.numberOfFixedColumns;
+   &ScrollableTable.ExtraSortParameters = %This.ExtraSortParameters;
+end-method;
+
+method SplitHeader
+   Local integer &col;
+   For &col = 1 To %Super.Header.Len
+      %This.SplitHeaderColumnIntoFixedOrScrollable(&col)
+   End-For;
+end-method;
+
+method SplitHeaderColumnIntoFixedOrScrollable
+   /+ &col as Integer +/
+   If &col <= &numberOfFixedColumns Then
+      &FixedTable.Header.Push(%Super.Header [&col]);
+   Else
+      &ScrollableTable.Header.Push(%Super.Header [&col]);
+   End-If;
+end-method;
+
+method SplitData
+   Local integer &row;
+   For &row = 1 To %Super.Data.Len
+      %This.AddDataRow();
+      %This.SplitDataRow(&row);
+   End-For;
+end-method;
+
+method AddDataRow
+   &FixedTable.Data.Push(CreateArrayRept("", 0));
+   &ScrollableTable.Data.Push(CreateArrayRept("", 0));
+end-method;
+
+method SplitDataRow
+   /+ &row as Integer +/
+   Local integer &col;
+   For &col = 1 To %Super.Data [&row].Len
+      %This.SplitDataIntoFixedOrScrollable(&row, &col);
+   End-For;
+end-method;
+
+method SplitDataIntoFixedOrScrollable
+   /+ &row as Integer, +/
+   /+ &col as Integer +/
+   Local string &data = %Super.Data [&row][&col];
+   If &col <= &numberOfFixedColumns Then
+      &FixedTable.Data [&row].Push(&data);
+   Else
+      &ScrollableTable.Data [&row].Push(&data);
+   End-If;
+end-method;
+
+method SplitSortableColumns
+   Local integer &col;
+   For &col = 1 To %Super.SortableColumns.Len
+      %This.SplitSortableColumnIntoFixedOrScrollable(&col);
+   End-For;
+end-method;
+
+method SplitSortableColumnIntoFixedOrScrollable
+   /+ &col as Integer +/
+   Local integer &sortableColumn = %Super.SortableColumns [&col];
+   If &col <= &numberOfFixedColumns Then
+      &FixedTable.SortableColumns.Push(&sortableColumn);
+      &ScrollableTable.fixedTableHasSortableColumn = True;
+   Else
+      &ScrollableTable.SortableColumns.Push(&sortableColumn - &numberOfFixedColumns);
+   End-If;
+end-method;
+

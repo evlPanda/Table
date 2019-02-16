@@ -1,0 +1,43 @@
+/* RX_WU0083, Michael Nitschke 24/10/2018 */
+
+class SortData
+   method Sort(&Data_ As array of array of string, &sortElement As integer, &sortOrder As string) Returns array of array of string;
+private
+   instance array of array of string &Data;
+   method AddSortElementToBeginningOfArray(&sortElement As integer);
+   method SortBySortElement(&sortOrder As string);
+   method RemoveSortElementFromBeginningOfArray();
+end-class;
+
+method Sort
+   /+ &Data_ as Array2 of String, +/
+   /+ &sortElement as Integer, +/
+   /+ &sortOrder as String +/
+   /+ Returns Array2 of String +/
+   &Data = &Data_;
+   %This.AddSortElementToBeginningOfArray(&sortElement);
+   %This.SortBySortElement(&sortOrder);
+   %This.RemoveSortElementFromBeginningOfArray();
+   Return &Data;
+end-method;
+
+method AddSortElementToBeginningOfArray
+   /+ &sortElement as Integer +/
+   Local integer &i;
+   For &i = 1 To &Data.Len
+      &Data [&i].Unshift(&Data [&i][&sortElement]);
+   End-For;
+end-method;
+
+method SortBySortElement
+   /+ &sortOrder as String +/
+   &Data.Sort(&sortOrder);
+end-method;
+
+method RemoveSortElementFromBeginningOfArray
+   Local integer &i;
+   For &i = 1 To &Data.Len
+      Local string &s = &Data [&i].Shift();
+   End-For;
+end-method;
+

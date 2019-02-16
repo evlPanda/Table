@@ -1,0 +1,12 @@
+class ExportToExcelButton
+   property boolean Visible;
+   method Get(&tableID As string, &exportFileName As string) Returns string;
+end-class;
+
+method Get
+   /+ &tableID as String, +/
+   /+ &exportFileName as String +/
+   /+ Returns String +/
+   Return GetHTMLText(HTML.RX_EXPORT_TO_EXCEL_JS, &tableID, &exportFileName);
+end-method;
+
