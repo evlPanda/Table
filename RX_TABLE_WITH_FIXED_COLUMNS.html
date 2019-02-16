@@ -1,0 +1,25 @@
+<style>
+  td { white-space: nowrap; }
+  .fixedTable { border-right-width: 0px; }
+  .scrollableTable { border-left-width: 0px; }
+  #scrollable { width:%Bind(:1); overflow-x:auto; }
+</style>
+
+<table id="fixedColumnTable" cellspacing="0" cellpadding="0" border="0">
+  <tr>
+    <td valign="top">
+
+      <div>      
+         %BIND(:2)
+      </div>
+
+    </td>
+    <td>
+
+     <div id="scrollable">       
+         %BIND(:3)
+     </div>
+
+    </td>
+  </tr>
+</table>
